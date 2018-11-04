@@ -1,0 +1,52 @@
+version: '3'
+services:
+    apache:
+        build: .docker/apache
+        container_name: symfony4_apache
+        ports:
+          - 80:80
+        volumes:
+          - .docker/config/vhosts:/etc/apache2/sites-enabled
+          - .:/home/www/symfony4
+        depends_on:
+          - php
+
+    mysql:
+        image: mysql
+        command: "--default-authentication-plugin=mysql_native_password"
+        container_name: symfony4_mysql
+        volumes:
+            - .docker/data/db:/var/lib/mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: symfony4
+            MYSQL_USER: symfony4
+            MYSQL_PASSWORD: symfony4
+
+    php:
+        build: .docker/php
+        container_name: symfony4_php
+        volumes:
+          - .:/home/www/symfony4
+        environment:
+          - maildev_host=symfony4_maildev
+        depends_on:
+          - maildev
+          - mysql
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: symfony4_phpmyadmin
+        environment:
+          PMA_HOST: mysql
+          PMA_PORT: 3306
+        ports:
+            - 8080:80
+        links:
+            - mysql
+
+    maildev:
+        image: djfarrelly/maildev
+        container_name: symfony4_maildev
+        ports:
+          - 8001:80
